@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABACUS</title>
+<style>
+  :root{
+    --body-graphite: #2A2C30;
+    --body-graphite-dark: #202226;
+    --panel-bevel: #383B40;
+    --screen-bg: #12201A;
+    --screen-glow: #1A2E22;
+    --phosphor: #8FE0A0;
+    --phosphor-dim: #4C7A58;
+    --key-num: #E9E6DF;
+    --key-num-text: #26282C;
+    --key-op: #4F729B;
+    --key-op-text: #F3F5F8;
+    --key-fn: #C97F3C;
+    --key-fn-text: #241705;
+    --key-mem: #45484D;
+    --key-mem-text: #D7D5D0;
+    --key-shadow: rgba(0,0,0,0.45);
+    --focus-ring: #E9C46A;
+    --font-display: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: radial-gradient(ellipse at 50% -10%, #34363B 0%, #17181B 65%);
+    font-family: var(--font-ui);
+    color: var(--key-num);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 28px 14px 48px;
+  }
+
+  .rig {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0 6px;
+  }
+
+  .label-row .name {
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: #8A8D93;
+  }
+
+  .label-row .model {
+    font-family: var(--font-display);
+    font-size: 11px;
+    color: #5C5F65;
+  }
+
+  .body {
+    background: linear-gradient(180deg, var(--body-graphite) 0%, var(--body-graphite-dark) 100%);
+    border-radius: 18px;
+    padding: 18px 16px 20px;
+    box-shadow:
+      0 30px 60px -20px rgba(0,0,0,0.6),
+      inset 0 1px 0 rgba(255,255,255,0.06),
+      inset 0 -1px 0 rgba(0,0,0,0.4);
+    border: 1px solid #17181B;
+  }
+
+  .screen-housing {
+    background: var(--panel-bevel);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 14px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+  }
+
+  .screen {
+    background: var(--screen-bg);
+    border-radius: 8px;
+    padding: 16px 16px 14px;
+    min-height: 108px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 24px rgba(0,0,0,0.6);
+  }
+
+  .screen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(143,224,160,0.04) 0%, transparent 40%);
+    pointer-events: none;
+  }
+
+  .screen-status {
+    font-family: var(--font-display);
+    font-size: 11px;
+    color: var(--phosphor-dim);
+    letter-spacing: 0.08em;
+    display: flex;
+    justify-content: space-between;
+    min-height: 14px;
+  }
+
+  .screen-history {
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--phosphor-dim);
+    text-align: right;
+    min-height: 18px;
+    overflow-x: auto;
+    white-space: nowrap;
+    text-shadow: 0 0 6px rgba(143,224,160,0.25);
+  }
+
+  .screen-main {
+    font-family: var(--font-display);
+    font-size: 38px;
+    text-align: right;
+    color: var(--phosphor);
+    text-shadow: 0 0 10px rgba(143,224,160,0.45);
+    overflow-x: auto;
+    white-space: nowrap;
+    line-height: 1.1;
+  }
+
+  .screen-main::-webkit-scrollbar, .screen-history::-webkit-scrollbar { display: none; }
+
+  .modes {
+    display: flex;
+    gap: 8px;
+    padding: 0 6px 2px;
+  }
+
+  .mode-btn {
+    font-family: var(--font-display);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    background: transparent;
+    color: #7D8087;
+    border: 1px solid #45484D;
+    border-radius: 5px;
+    padding: 4px 9px;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .mode-btn.active {
+    color: var(--focus-ring);
+    border-color: var(--focus-ring);
+  }
+
+  .mode-btn:focus-visible, button:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .pad {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  .pad.functions { grid-template-columns: repeat(5, 1fr); }
+
+  button.key {
+    appearance: none;
+    border: none;
+    border-radius: 9px;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 12px 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.06s ease, filter 0.12s ease;
+    box-shadow: 0 3px 0 var(--key-shadow), 0 4px 6px rgba(0,0,0,0.3);
+  }
+
+  button.key:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--key-shadow), 0 2px 4px rgba(0,0,0,0.3);
+  }
+
+  .k-num { background: var(--key-num); color: var(--key-num-text); }
+  .k-op  { background: var(--key-op); color: var(--key-op-text); font-size: 17px; }
+  .k-fn  { background: var(--key-fn); color: var(--key-fn-text); font-size: 13px; }
+  .k-mem { background: var(--key-mem); color: var(--key-mem-text); font-size: 12px; letter-spacing: 0.02em; }
+  .k-eq  { background: linear-gradient(180deg, #D9A441, #B9832D); color: #241705; font-size: 18px; grid-column: span 2; }
+
+  .k-fn:hover, .k-mem:hover { filter: brightness(1.12); }
+  .k-op:hover { filter: brightness(1.1); }
+  .k-num:hover { filter: brightness(0.97); }
+
+  .wide { grid-column: span 2; }
+
+  footer {
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 10.5px;
+    color: #55585E;
+    letter-spacing: 0.1em;
+    padding-top: 2px;
+  }
+
+  @media (max-width: 400px) {
+    .screen-main { font-size: 30px; }
+    button.key { font-size: 13px; padding: 11px 4px; }
+    .k-fn { font-size: 11.5px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    button.key, .mode-btn { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="rig">
+  <div class="label-row">
+    <span class="name">ABACUS</span>
+    <span class="model">MODEL CX-7</span>
+  </div>
+
+  <div class="body">
+    <div class="screen-housing">
+      <div class="screen">
+        <div class="screen-status">
+          <span id="memIndicator"></span>
+          <span id="angleIndicator">RAD</span>
+        </div>
+        <div class="screen-history" id="history" aria-live="off"></div>
+        <div class="screen-main" id="display" aria-live="polite">0</div>
+      </div>
+    </div>
+
+    <div class="modes">
+      <button class="mode-btn active" id="radBtn" type="button">RAD</button>
+      <button class="mode-btn" id="degBtn" type="button">DEG</button>
+    </div>
+
+    <div class="pad functions">
+      <button class="key k-mem" data-action="mc">MC</button>
+      <button class="key k-mem" data-action="mr">MR</button>
+      <button class="key k-mem" data-action="mplus">M+</button>
+      <button class="key k-mem" data-action="mminus">M-</button>
+      <button class="key k-mem" data-action="clear">AC</button>
+
+      <button class="key k-fn" data-action="paren-open">(</button>
+      <button class="key k-fn" data-action="paren-close">)</button>
+      <button class="key k-fn" data-action="func" data-value="sin(">sin</button>
+      <button class="key k-fn" data-action="func" data-value="cos(">cos</button>
+      <button class="key k-fn" data-action="func" data-value="tan(">tan</button>
+
+      <button class="key k-fn" data-action="func" data-value="asin(">sin⁻¹</button>
+      <button class="key k-fn" data-action="func" data-value="acos(">cos⁻¹</button>
+      <button class="key k-fn" data-action="func" data-value="atan(">tan⁻¹</button>
+      <button class="key k-fn" data-action="func" data-value="ln(">ln</button>
+      <button class="key k-fn" data-action="func" data-value="log(">log</button>
+
+      <button class="key k-fn" data-action="insert" data-value="^">xʸ</button>
+      <button class="key k-fn" data-action="sq">x²</button>
+      <button class="key k-fn" data-action="func" data-value="sqrt(">√</button>
+      <button class="key k-fn" data-action="fact">n!</button>
+      <button class="key k-fn" data-action="recip">1/x</button>
+    </div>
+
+    <div class="pad numbers">
+      <button class="key k-mem" data-action="pi">π</button>
+      <button class="key k-mem" data-action="e">e</button>
+      <button class="key k-mem" data-action="backspace">⌫</button>
+      <button class="key k-mem" data-action="percent">%</button>
+      <button class="key k-op" data-action="insert" data-value="/">÷</button>
+
+      <button class="key k-num" data-action="digit" data-value="7">7</button>
+      <button class="key k-num" data-action="digit" data-value="8">8</button>
+      <button class="key k-num" data-action="digit" data-value="9">9</button>
+      <button class="key k-mem" data-action="sign">±</button>
+      <button class="key k-op" data-action="insert" data-value="*">×</button>
+
+      <button class="key k-num" data-action="digit" data-value="4">4</button>
+      <button class="key k-num" data-action="digit" data-value="5">5</button>
+      <button class="key k-num" data-action="digit" data-value="6">6</button>
+      <button class="key k-op wide" data-action="insert" data-value="-">−</button>
+
+      <button class="key k-num" data-action="digit" data-value="1">1</button>
+      <button class="key k-num" data-action="digit" data-value="2">2</button>
+      <button class="key k-num" data-action="digit" data-value="3">3</button>
+      <button class="key k-op wide" data-action="insert" data-value="+">+</button>
+
+      <button class="key k-num wide" data-action="digit" data-value="0">0</button>
+      <button class="key k-num" data-action="decimal">.</button>
+      <button class="key k-eq" data-action="equals">=</button>
+    </div>
+  </div>
+
+  <footer>KEYBOARD ENTRY SUPPORTED · ENTER = EQUALS</footer>
+</div>
+
+<script>
+(function(){
+  var display = document.getElementById('display');
+  var historyEl = document.getElementById('history');
+  var memIndicator = document.getElementById('memIndicator');
+  var angleIndicator = document.getElementById('angleIndicator');
+  var radBtn = document.getElementById('radBtn');
+  var degBtn = document.getElementById('degBtn');
+
+  var expr = '';
+  var justEvaluated = false;
+  var memory = 0;
+  var hasMemory = false;
+  var angleMode = 'RAD';
+
+  function updateMemIndicator(){
+    memIndicator.textContent = hasMemory ? 'M' : '';
+  }
+
+  function render(){
+    display.textContent = expr.length ? formatForDisplay(expr) : '0';
+  }
+
+  function formatForDisplay(s){
+    return s
+      .replace(/\*/g, '×')
+      .replace(/\//g, '÷')
+      .replace(/-/g, '−')
+      .replace(/sqrt\(/g, '√(')
+      .replace(/asin\(/g, 'sin⁻¹(')
+      .replace(/acos\(/g, 'cos⁻¹(')
+      .replace(/atan\(/g, 'tan⁻¹(');
+  }
+
+  // ---- Tokenizer ----
+  function tokenize(s){
+    var tokens = [];
+    var i = 0;
+    var funcs = ['sin','cos','tan','asin','acos','atan','ln','log','sqrt'];
+    while(i < s.length){
+      var c = s[i];
+      if (/\s/.test(c)) { i++; continue; }
+      if (/[0-9.]/.test(c)) {
+        var num = '';
+        while(i < s.length && /[0-9.]/.test(s[i])) { num += s[i]; i++; }
+        tokens.push({type:'num', value: parseFloat(num)});
+        continue;
+      }
+      var matchedFunc = null;
+      for (var f = 0; f < funcs.length; f++){
+        if (s.substr(i, funcs[f].length) === funcs[f]) { matchedFunc = funcs[f]; break; }
+      }
+      if (matchedFunc) {
+        tokens.push({type:'func', value: matchedFunc});
+        i += matchedFunc.length;
+        continue;
+      }
+      if (s[i] === 'p' && s.substr(i,2) === 'pi') { tokens.push({type:'num', value: Math.PI}); i += 2; continue; }
+      if (s[i] === 'e') { tokens.push({type:'num', value: Math.E}); i++; continue; }
+      if ('+-*/^()!%'.indexOf(c) !== -1) {
+        tokens.push({type:'op', value: c});
+        i++;
+        continue;
+      }
+      throw new Error('bad char');
+    }
+    return tokens;
+  }
+
+  // ---- Shunting-yard to RPN ----
+  function toRPN(tokens){
+    var out = [];
+    var stack = [];
+    var prec = {'+':2,'-':2,'*':3,'/':3,'^':4,'u-':5,'!':6,'%':6};
+    var rightAssoc = {'^':true, 'u-':true};
+
+    var prevType = null;
+    for (var idx = 0; idx < tokens.length; idx++){
+      var t = tokens[idx];
+      if (t.type === 'num') {
+        out.push(t);
+        prevType = 'num';
+      } else if (t.type === 'func') {
+        stack.push(t);
+        prevType = 'func';
+      } else if (t.type === 'op') {
+        if (t.value === '(') {
+          stack.push(t);
+          prevType = 'op(';
+        } else if (t.value === ')') {
+          while (stack.length && !(stack[stack.length-1].type==='op' && stack[stack.length-1].value === '(')) {
+            out.push(stack.pop());
+          }
+          stack.pop(); // remove '('
+          if (stack.length && stack[stack.length-1].type === 'func') {
+            out.push(stack.pop());
+          }
+          prevType = 'num';
+        } else if (t.value === '!' || t.value === '%') {
+          // postfix unary
+          out.push(t);
+          prevType = 'num';
+        } else {
+          var opVal = t.value;
+          var isUnaryMinus = (opVal === '-' && (prevType === null || prevType === 'op' || prevType === 'op(' ));
+          var key = isUnaryMinus ? 'u-' : opVal;
+          while (stack.length) {
+            var top = stack[stack.length-1];
+            if (top.type === 'op' && top.value !== '(' ) {
+              var topKey = (top.value === 'u-') ? 'u-' : top.value;
+              if ((prec[topKey] > prec[key]) || (prec[topKey] === prec[key] && !rightAssoc[key])) {
+                out.push(stack.pop());
+                continue;
+              }
+            }
+            break;
+          }
+          stack.push({type:'op', value: key});
+          prevType = 'op';
+        }
+      }
+    }
+    while (stack.length) out.push(stack.pop());
+    return out;
+  }
+
+  function factorial(n){
+    if (n < 0 || Math.floor(n) !== n) throw new Error('bad factorial');
+    if (n > 170) return Infinity;
+    var r = 1;
+    for (var i = 2; i <= n; i++) r *= i;
+    return r;
+  }
+
+  function evalRPN(rpn){
+    var st = [];
+    var toRad = function(x){ return angleMode === 'DEG' ? x * Math.PI / 180 : x; };
+    var fromRad = function(x){ return angleMode === 'DEG' ? x * 180 / Math.PI : x; };
+
+    for (var i = 0; i < rpn.length; i++){
+      var t = rpn[i];
+      if (t.type === 'num') { st.push(t.value); continue; }
+      if (t.type === 'func') {
+        var a = st.pop();
+        var res;
+        switch(t.value){
+          case 'sin': res = Math.sin(toRad(a)); break;
+          case 'cos': res = Math.cos(toRad(a)); break;
+          case 'tan': res = Math.tan(toRad(a)); break;
+          case 'asin': res = fromRad(Math.asin(a)); break;
+          case 'acos': res = fromRad(Math.acos(a)); break;
+          case 'atan': res = fromRad(Math.atan(a)); break;
+          case 'ln': res = Math.log(a); break;
+          case 'log': res = Math.log10(a); break;
+          case 'sqrt': res = Math.sqrt(a); break;
+          default: throw new Error('unknown func');
+        }
+        st.push(res);
+        continue;
+      }
+      if (t.type === 'op') {
+        if (t.value === 'u-') { st.push(-st.pop()); continue; }
+        if (t.value === '!') { st.push(factorial(st.pop())); continue; }
+        if (t.value === '%') { st.push(st.pop() / 100); continue; }
+        var b = st.pop();
+        var a2 = st.pop();
+        var r;
+        switch(t.value){
+          case '+': r = a2 + b; break;
+          case '-': r = a2 - b; break;
+          case '*': r = a2 * b; break;
+          case '/': r = a2 / b; break;
+          case '^': r = Math.pow(a2, b); break;
+          default: throw new Error('unknown op');
+        }
+        st.push(r);
+      }
+    }
+    if (st.length !== 1 || isNaN(st[0])) throw new Error('bad expr');
+    return st[0];
+  }
+
+  function evaluate(s){
+    var tokens = tokenize(s);
+    var rpn = toRPN(tokens);
+    return evalRPN(rpn);
+  }
+
+  function formatResult(n){
+    if (!isFinite(n)) return n > 0 ? 'ERROR' : 'ERROR';
+    var r = Math.round(n * 1e10) / 1e10;
+    var str = r.toString();
+    if (str.length > 14) {
+      str = r.toPrecision(10).replace(/\.?0+$/,'').replace(/\.?0+e/,'e');
+    }
+    return str;
+  }
+
+  function openParensCount(s){
+    var open = (s.match(/\(/g)||[]).length;
+    var close = (s.match(/\)/g)||[]).length;
+    return open - close;
+  }
+
+  function handleAction(action, value){
+    if (action === 'clear') {
+      expr = '';
+      historyEl.textContent = '';
+      justEvaluated = false;
+      render();
+      return;
+    }
+    if (action === 'backspace') {
+      expr = expr.slice(0, -1);
+      render();
+      return;
+    }
+    if (action === 'equals') {
+      if (!expr) return;
+      try {
+        var exprToEval = expr;
+        var opens = openParensCount(exprToEval);
+        for (var k = 0; k < opens; k++) exprToEval += ')';
+        var result = evaluate(exprToEval);
+        var formatted = formatResult(result);
+        historyEl.textContent = formatForDisplay(expr) + ' =';
+        expr = formatted;
+        justEvaluated = true;
+      } catch(e) {
+        display.textContent = 'ERROR';
+        expr = '';
+        justEvaluated = false;
+        return;
+      }
+      render();
+      return;
+    }
+    if (action === 'digit') {
+      if (justEvaluated) { expr = ''; justEvaluated = false; }
+      expr += value;
+      render();
+      return;
+    }
+    if (action === 'decimal') {
+      if (justEvaluated) { expr = ''; justEvaluated = false; }
+      var lastNumMatch = expr.match(/([0-9.]*)$/);
+      if (lastNumMatch && lastNumMatch[1].indexOf('.') !== -1) return;
+      expr += (lastNumMatch && lastNumMatch[1] ? '' : '0') + '.';
+      render();
+      return;
+    }
+    if (action === 'insert') {
+      if (justEvaluated) { justEvaluated = false; }
+      expr += value;
+      render();
+      return;
+    }
+    if (action === 'func') {
+      if (justEvaluated) { expr = ''; justEvaluated = false; }
+      expr += value;
+      render();
+      return;
+    }
+    if (action === 'paren-open') {
+      if (justEvaluated) { expr = ''; justEvaluated = false; }
+      expr += '(';
+      render();
+      return;
+    }
+    if (action === 'paren-close') {
+      if (openParensCount(expr) > 0) { expr += ')'; render(); }
+      return;
+    }
+    if (action === 'pi') {
+      if (justEvaluated) { expr = ''; justEvaluated = false; }
+      expr += 'pi';
+      render();
+      return;
+    }
+    if (action === 'e') {
+      if (justEvaluated) { expr = ''; justEvaluated = false; }
+      expr += 'e';
+      render();
+      return;
+    }
+    if (action === 'sign') {
+      if (expr && !justEvaluated) {
+        var m = expr.match(/(-?[0-9.]+)$/);
+        if (m) {
+          var num = m[1];
+          var start = expr.length - num.length;
+          if (num[0] === '-') expr = expr.slice(0,start) + num.slice(1);
+          else expr = expr.slice(0,start) + '-' + num;
+          render();
+        }
+      } else if (justEvaluated) {
+        if (expr[0] === '-') expr = expr.slice(1); else expr = '-' + expr;
+        justEvaluated = false;
+        render();
+      }
+      return;
+    }
+    if (action === 'sq') {
+      if (!expr) return;
+      expr += '^2';
+      render();
+      return;
+    }
+    if (action === 'fact') {
+      if (!expr) return;
+      expr += '!';
+      render();
+      return;
+    }
+    if (action === 'recip') {
+      if (!expr) return;
+      expr = '1/(' + expr + ')';
+      justEvaluated = false;
+      render();
+      return;
+    }
+    if (action === 'percent') {
+      if (!expr) return;
+      expr += '%';
+      render();
+      return;
+    }
+    if (action === 'mc') { memory = 0; hasMemory = false; updateMemIndicator(); return; }
+    if (action === 'mr') {
+      if (justEvaluated) { expr = ''; justEvaluated = false; }
+      expr += formatResult(memory);
+      render();
+      return;
+    }
+    if (action === 'mplus' || action === 'mminus') {
+      if (!expr) return;
+      try {
+        var opens2 = openParensCount(expr);
+        var e2 = expr;
+        for (var k2 = 0; k2 < opens2; k2++) e2 += ')';
+        var val = evaluate(e2);
+        memory += (action === 'mplus' ? val : -val);
+        hasMemory = true;
+        updateMemIndicator();
+      } catch(e) {}
+      return;
+    }
+  }
+
+  document.querySelectorAll('.key').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      handleAction(btn.dataset.action, btn.dataset.value);
+    });
+  });
+
+  radBtn.addEventListener('click', function(){
+    angleMode = 'RAD';
+    radBtn.classList.add('active');
+    degBtn.classList.remove('active');
+    angleIndicator.textContent = 'RAD';
+  });
+  degBtn.addEventListener('click', function(){
+    angleMode = 'DEG';
+    degBtn.classList.add('active');
+    radBtn.classList.remove('active');
+    angleIndicator.textContent = 'DEG';
+  });
+
+  document.addEventListener('keydown', function(ev){
+    var k = ev.key;
+    if (/[0-9]/.test(k)) { handleAction('digit', k); return; }
+    if (k === '.') { handleAction('decimal'); return; }
+    if (k === '+' || k === '-' || k === '*' || k === '/') { handleAction('insert', k); return; }
+    if (k === '^') { handleAction('insert', '^'); return; }
+    if (k === '(') { handleAction('paren-open'); return; }
+    if (k === ')') { handleAction('paren-close'); return; }
+    if (k === 'Enter' || k === '=') { ev.preventDefault(); handleAction('equals'); return; }
+    if (k === 'Backspace') { handleAction('backspace'); return; }
+    if (k === 'Escape') { handleAction('clear'); return; }
+    if (k === '%') { handleAction('percent'); return; }
+  });
+
+  render();
+  updateMemIndicator();
+})();
+</script>
+
+</body>
+</html>
