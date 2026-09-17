@@ -12,25 +12,8 @@ A scientific calculator, styled like a physical instrument — phosphor-green LC
 - **Keyboard support**: type numbers and operators directly, `Enter` for `=`, `Backspace` to delete, `Esc` to clear
 - **Responsive**: works down to mobile widths, with visible keyboard focus states
 
-## Usage
-
-Just open `index.html` in any modern browser — no installation, no build step, no dependencies.
-
-```bash
-# clone the repo, then:
-open index.html      # macOS
-start index.html      # Windows
-xdg-open index.html   # Linux
-```
-
-## How it works
-
-Expressions are parsed with a small tokenizer and converted to Reverse Polish Notation via the shunting-yard algorithm, then evaluated — no `eval()` involved. This keeps operator precedence, unary minus, functions, and factorials all correct without relying on JavaScript's own expression parser.
-
 ## Tech
 
-Plain HTML, CSS, and vanilla JavaScript. One file, no frameworks, no build tools.
+Plain HTML, CSS, and vanilla JavaScript. 
 
-## License
 
-MIT
