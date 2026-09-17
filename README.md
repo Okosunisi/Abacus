@@ -1,6 +1,6 @@
 # ABACUS
 
-A scientific calculator, styled like a physical instrument — phosphor-green LCD display, graphite body, single-file HTML/CSS/JS with no dependencies or build step.
+A scientific calculator, styled like a physical instrument — phosphor-green LCD display, graphite body, single-file HTML/CSS/JS.
 
 ## Features
 
